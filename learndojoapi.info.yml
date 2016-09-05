@@ -1,0 +1,5 @@
+name: LearnDojoAPI
+description: 'Learn Dojo API Module - REST API to provide access to missions mapped to Online Educational Content'
+type: module
+core: 8.x
+package: KA Mission Mapping
