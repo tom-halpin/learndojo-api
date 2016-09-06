@@ -49,21 +49,29 @@ class StrandUnitsResource extends ResourceBase {
         $results = db_query("SELECT u.id, u.strand_id as strandid, u.name, u.description, u.last_update, 
                              s.name as strandname, s.description as stranddescription FROM kaunit u, 
                              kastrand s where u.strand_id = s.id and u.strand_id = :strandid", array(':strandid' => $strandid))->fetchAllAssoc('id');
+
         $i = 0;
-        $outp = "[";
+        $outp = "{";
         foreach ($results as $row) {
-        if ($outp != "[") {$outp .= ",";}
-        
-            $outp .= '{"id":' . '"'  . $row -> id . '",';
+
+            if ($i == 0){
+                // first row
+                $outp .= '"strandid":"'. $row -> strandid     . '",';
+                $outp .= '"strandname":"'. $row -> strandname     . '",';
+                $outp .= '"stranddescription":"'. $row -> stranddescription. '",';
+                $outp .= '"units": [{';             
+            }
+            else {
+                $outp .= ',{';
+            }
+            $outp .= '"id":' . '"'  . $row -> id . '",';
             $outp .= '"name":"'   . $row -> name        . '",';
             $outp .= '"description":"'. $row -> description     . '",';
-            $outp .= '"last_update":"'. $row -> last_update     . '",';
-            $outp .= '"strandid":"'. $row -> strandid     . '",';
-            $outp .= '"strandname":"'. $row -> strandname     . '",';
-            $outp .= '"stranddescription":"'. $row -> stranddescription     . '"}';
+            $outp .= '"last_update":"'. $row -> last_update . '"}';
+
             $i = $i + 1;
         }
-        $outp .="]";
+        $outp .="]}";
     
         if ($i > 0) {
            // need to turn off the cache on the results array so set the max-age to 0 by adding $results entity to the cache dependencies.

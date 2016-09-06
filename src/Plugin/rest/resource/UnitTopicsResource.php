@@ -62,15 +62,29 @@ class UnitTopicsResource extends ResourceBase {
                 e.id = d.topictype_id AND
                 f.id = d.term_id AND
                 d.unit_id = :unitid', array(':unitid' => $unitid))->fetchAllAssoc('id');
-                
+
         $i = 0;
-        $outp = "[";
+        $outp = "{";
         foreach ($results as $row) {
-        if ($outp != "[") {$outp .= ",";}
-        
-            $outp .= '{"id":' . '"'  . $row -> id . '",';
-            $outp .= '"name":"'   . $row -> name        . '",';
-            $outp .= '"description":"'. $row -> description     . '",';
+
+            if ($i == 0){
+                // first row
+                $outp .= '"countryid":"'. $row -> countryid     . '",';
+                $outp .= '"countryname":"'. $row -> countryname     . '",';
+                $outp .= '"missionid":"'. $row -> missionid     . '",';
+                $outp .= '"missionname":"'. $row -> missionname     . '",';            
+                $outp .= '"strandid":"'. $row -> strandid     . '",';
+                $outp .= '"strandname":"'. $row -> strandname     . '",';                
+                $outp .= '"unitid":"'. $row -> unitid     . '",';
+                $outp .= '"unitname":"'. $row -> unitname     . '",';
+                $outp .= '"topics": [{';             
+            }
+            else {
+                $outp .= ',{';
+            }
+            $outp .= '"id":"'. $row -> id     . '",';
+            $outp .= '"name":"'. $row -> name     . '",';
+            $outp .= '"description":"'. $row -> description. '",';                
             $outp .= '"corecontent":"'   . $row -> corecontent        . '",';
             $outp .= '"learningoutcome":"'   . $row -> learningoutcome        . '",';
             $outp .= '"externalTopic":"'   . $row -> externalTopic        . '",';
@@ -80,20 +94,11 @@ class UnitTopicsResource extends ResourceBase {
             $outp .= '"weeknumber":"'   . $row -> weeknumber        . '",';
             $outp .= '"topictypeid":"'   . $row -> topictypeid        . '",';
             $outp .= '"topictypename":"'   . $row -> topictypename        . '",';
-            $outp .= '"notes":"'   . $row -> notes        . '",';            
-            $outp .= '"countryid":"'. $row -> countryid     . '",';
-            $outp .= '"countryname":"'. $row -> countryname     . '",';
-            $outp .= '"missionid":"'. $row -> missionid     . '",';
-            $outp .= '"missionname":"'. $row -> missionname     . '",';            
-            $outp .= '"strandid":"'. $row -> strandid     . '",';
-            $outp .= '"strandname":"'. $row -> strandname     . '",';
-            $outp .= '"unitid":"'. $row -> unitid     . '",';
-            $outp .= '"unitname":"'. $row -> unitname     . '"}';
-            
+            $outp .= '"notes":"'   . $row -> notes        . '"}';            
             $i = $i + 1;
         }
-        $outp .="]";
-    
+        $outp .="]}";
+        
         if ($i > 0) {
            // need to turn off the cache on the results array so set the max-age to 0 by adding $results entity to the cache dependencies.
           // This will clear our cache when this entity updates.

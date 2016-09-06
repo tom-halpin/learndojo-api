@@ -74,7 +74,6 @@ class TopicResource extends ResourceBase {
             $renderer = \Drupal::service('renderer');
             $renderer->addCacheableDependency($record, null);
           
-            $outp = "[";
             $outp .= '{"id":' . '"'  . $record[$id] -> id . '",';
             $outp .= '"name":"'   . $record[$id] -> name        . '",';
             $outp .= '"description":"'. $record[$id] -> description     . '",';
@@ -97,7 +96,6 @@ class TopicResource extends ResourceBase {
             $outp .= '"strandname":"'. $record[$id] -> strandname     . '",';
             $outp .= '"unitid":"'. $record[$id] -> unitid     . '",';
             $outp .= '"unitname":"'. $record[$id] -> unitname     . '"}';
-            $outp .="]";
     
             // note decoding JSON before returning it to avoid embedded "'s being converted to escaped UTF characters
             // as we are passing a string to JsonResponse and not an array

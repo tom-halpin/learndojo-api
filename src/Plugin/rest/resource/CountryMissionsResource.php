@@ -50,20 +50,27 @@ class CountryMissionsResource extends ResourceBase {
                              c.name as countryname, c.description as countrydescription FROM kamission m, 
                              kacountry c where m.country_id = c.id and m.country_id = :countryid", array(':countryid' => $countryid))->fetchAllAssoc('id');
         $i = 0;
-        $outp = "[";
+        $outp = "{";
         foreach ($results as $row) {
-        if ($outp != "[") {$outp .= ",";}
-        
-            $outp .= '{"id":' . '"'  . $row -> id . '",';
+
+            if ($i == 0){
+                // first row
+                $outp .= '"countryid":"'. $row -> countryid     . '",';
+                $outp .= '"countryname":"'. $row -> countryname     . '",';
+                $outp .= '"countrydescription":"'. $row -> countrydescription. '",';
+                $outp .= '"missions": [{';        	   
+            }
+            else {
+                $outp .= ',{';
+            }
+            $outp .= '"id":' . '"'  . $row -> id . '",';
             $outp .= '"name":"'   . $row -> name        . '",';
             $outp .= '"description":"'. $row -> description     . '",';
-            $outp .= '"last_update":"'. $row -> last_update     . '",';
-            $outp .= '"countryid":"'. $row -> countryid     . '",';
-            $outp .= '"countryname":"'. $row -> countryname     . '",';
-            $outp .= '"countrydescription":"'. $row -> countrydescription     . '"}';
+            $outp .= '"last_update":"'. $row -> last_update . '"}';
+
             $i = $i + 1;
         }
-        $outp .="]";
+        $outp .="]}";
     
         if ($i > 0) {
            // need to turn off the cache on the results array so set the max-age to 0 by adding $results entity to the cache dependencies.

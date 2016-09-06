@@ -49,22 +49,33 @@ class MissionStrandsResource extends ResourceBase {
         $results = db_query("SELECT s.id, s.mission_id as missionid, s.name, s.description, s.last_update, 
                              m.name as missionname, m.description as missiondescription FROM kastrand s, 
                              kamission m where s.mission_id = m.id and s.mission_id = :missionid", array(':missionid' => $missionid))->fetchAllAssoc('id');
+
+
         $i = 0;
-        $outp = "[";
+        $outp = "{";
         foreach ($results as $row) {
-        if ($outp != "[") {$outp .= ",";}
-        
-            $outp .= '{"id":' . '"'  . $row -> id . '",';
+
+            if ($i == 0){
+                // first row
+                $outp .= '"missionid":"'. $row -> missionid     . '",';
+                $outp .= '"missionname":"'. $row -> missionname     . '",';
+                $outp .= '"missiondescription":"'. $row -> missiondescription. '",';
+                $outp .= '"strands": [{';             
+            }
+            else {
+                $outp .= ',{';
+            }
+            $outp .= '"id":' . '"'  . $row -> id . '",';
             $outp .= '"name":"'   . $row -> name        . '",';
             $outp .= '"description":"'. $row -> description     . '",';
-            $outp .= '"last_update":"'. $row -> last_update     . '",';
-            $outp .= '"missionid":"'. $row -> missionid     . '",';
-            $outp .= '"missionname":"'. $row -> missionname     . '",';
-            $outp .= '"missiondescription":"'. $row -> missiondescription     . '"}';
+            $outp .= '"last_update":"'. $row -> last_update . '"}';
+
             $i = $i + 1;
         }
-        $outp .="]";
-
+        $outp .="]}";
+    
+        // throw new NotFoundHttpException($outp);
+        
         //$outp1 = json_decode($outp);
         //throw new NotFoundHttpException(json_last_error());
             
