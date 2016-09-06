@@ -47,7 +47,7 @@ class CountriesResource extends ResourceBase {
 
     $results = db_query('SELECT * FROM {kacountry} ')->fetchAllAssoc('id');
     $i = 0;
-    $outp = "[";
+
     foreach ($results as $row) {
     if ($outp != "[") {$outp .= ",";}
     
@@ -57,7 +57,7 @@ class CountriesResource extends ResourceBase {
         $outp .= '"last_update":"'. $row -> last_update     . '"}';
         $i = $i + 1;
     }
-    $outp .="]";
+
 
     if ($i > 0) {
        // need to turn off the cache on the results array so set the max-age to 0 by adding $results entity to the cache dependencies.
