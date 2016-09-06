@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * Contains Drupal\learndojoapi\Plugin\rest\resource\CountryResource.
+ * Contains Drupal\learndojoapi\Plugin\rest\resource\StrandResource.
  */
 
 namespace Drupal\learndojoapi\Plugin\rest\resource;
@@ -17,18 +17,18 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 /**
- * Provides a resource to get learning dojo country by id.
+ * Provides a resource to get learning dojo strand .
  *
  * @RestResource(
- *   id = "country",
- *   label = @Translation("Learn Dojo Country"),
+ *   id = "strand",
+ *   label = @Translation("Learn Dojo Strand"),
  *   uri_paths = {
- *     "canonical" = "/api/country/{id}"
+ *     "canonical" = "/api/strand/{id}"
  *   }
  * )
 
  */
-class CountryResource extends ResourceBase {
+class StrandResource extends ResourceBase {
 
   /**
    *  A curent user instance.
@@ -51,8 +51,9 @@ class CountryResource extends ResourceBase {
    */
   public function get($id = NULL) {
       if ($id) {
-        $record = db_query("SELECT * FROM {kacountry} WHERE id = :id", array(':id' => $id))
-            ->fetchAllAssoc('id');
+        $record = db_query("SELECT s.id, s.mission_id as missionid, s.name, s.description, s.last_update, 
+                             m.name as missionname, m.description as missiondescription FROM kastrand s, 
+                             kamission m where s.mission_id = m.id and s.id = :id", array(':id' => $id))->fetchAllAssoc('id');
         if (!empty($record)) {
             // need to turn off the cache on the results array so set the max-age to 0 by adding $results entity to the cache dependencies.
             // This will clear our cache when this entity updates.
@@ -60,19 +61,22 @@ class CountryResource extends ResourceBase {
             $renderer->addCacheableDependency($record, null);
           
             $outp = "[";
-            $outp .= '{"id":' . '"'  . $record[$id]->id . '",';
+            $outp .= '{"id":' . '"'  . $record[$id] -> id . '",';
             $outp .= '"name":"'   . $record[$id] -> name        . '",';
             $outp .= '"description":"'. $record[$id] -> description     . '",';
-            $outp .= '"last_update":"'. $record[$id] -> last_update     . '"}';
+            $outp .= '"last_update":"'. $record[$id] -> last_update     . '",';
+            $outp .= '"missionid":"'. $record[$id] -> missionid     . '",';
+            $outp .= '"missionname":"'. $record[$id] -> missionname     . '",';
+            $outp .= '"missiondescription":"'. $record[$id] -> missiondescription     . '"}';
             $outp .="]";
     
             // note decoding JSON before returning it to avoid embedded "'s being converted to escaped UTF characters
             // as we are passing a string to JsonResponse and not an array
             return  new \Symfony\Component\HttpFoundation\JsonResponse(json_decode($outp));
         }
-        throw new NotFoundHttpException(t('Country with ID @id was not found', array('@id' => $id)));
+        throw new NotFoundHttpException(t('Strand with ID @id was not found', array('@id' => $id)));
     }
-    throw new NotFoundHttpException(t('ID not provided'));
+      throw new NotFoundHttpException(t('Strand ID not provided'));
   }
  
     /**

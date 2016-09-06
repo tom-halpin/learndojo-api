@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * Contains Drupal\learndojoapi\Plugin\rest\resource\CountriesResource.
+ * Contains Drupal\learndojoapi\Plugin\rest\resource\StrandUnitsResource.
  */
 
 namespace Drupal\learndojoapi\Plugin\rest\resource;
@@ -18,18 +18,18 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 /**
- * Provides a resource to get learning dojo countries.
+ * Provides a resource to get learning dojo units by strand id.
  *
  * @RestResource(
- *   id = "countries",
- *   label = @Translation("Learn Dojo Countries"),
+ *   id = "strandunits",
+ *   label = @Translation("Learn Dojo Strand Units"),
  *   uri_paths = {
- *     "canonical" = "/api/countries"
+ *     "canonical" = "/api/strandunits/{strandid}"
  *   }
  * )
 
  */
-class CountriesResource extends ResourceBase {
+class StrandUnitsResource extends ResourceBase {
 
 
   /**
@@ -43,33 +43,42 @@ class CountriesResource extends ResourceBase {
   /*
    * Responds to GET requests.
    */
-  public function get() {
+  public function get($strandid = NULL) {
+      if ($strandid) {
 
-    $results = db_query('SELECT * FROM {kacountry} ')->fetchAllAssoc('id');
-    $i = 0;
-    $outp = "[";
-    foreach ($results as $row) {
-    if ($outp != "[") {$outp .= ",";}
+        $results = db_query("SELECT u.id, u.strand_id as strandid, u.name, u.description, u.last_update, 
+                             s.name as strandname, s.description as stranddescription FROM kaunit u, 
+                             kastrand s where u.strand_id = s.id and u.strand_id = :strandid", array(':strandid' => $strandid))->fetchAllAssoc('id');
+        $i = 0;
+        $outp = "[";
+        foreach ($results as $row) {
+        if ($outp != "[") {$outp .= ",";}
+        
+            $outp .= '{"id":' . '"'  . $row -> id . '",';
+            $outp .= '"name":"'   . $row -> name        . '",';
+            $outp .= '"description":"'. $row -> description     . '",';
+            $outp .= '"last_update":"'. $row -> last_update     . '",';
+            $outp .= '"strandid":"'. $row -> strandid     . '",';
+            $outp .= '"strandname":"'. $row -> strandname     . '",';
+            $outp .= '"stranddescription":"'. $row -> stranddescription     . '"}';
+            $i = $i + 1;
+        }
+        $outp .="]";
     
-        $outp .= '{"id":' . '"'  . $row -> id . '",';
-        $outp .= '"name":"'   . $row -> name        . '",';
-        $outp .= '"description":"'. $row -> description     . '",';
-        $outp .= '"last_update":"'. $row -> last_update     . '"}';
-        $i = $i + 1;
-    }
-    $outp .="]";
+        if ($i > 0) {
+           // need to turn off the cache on the results array so set the max-age to 0 by adding $results entity to the cache dependencies.
+          // This will clear our cache when this entity updates.
+          $renderer = \Drupal::service('renderer');
+          $renderer->addCacheableDependency($results, null);
 
-    if ($i > 0) {
-       // need to turn off the cache on the results array so set the max-age to 0 by adding $results entity to the cache dependencies.
-      // This will clear our cache when this entity updates.
-      $renderer = \Drupal::service('renderer');
-      $renderer->addCacheableDependency($results, null);
-      // note decoding JSON before returning it to avoid embedded "'s being converted to escaped UTF characters
-      // as we are passing a string to JsonResponse and not an array
-      return  new \Symfony\Component\HttpFoundation\JsonResponse(json_decode($outp));
+          // note decoding JSON before returning it to avoid embedded "'s being converted to escaped UTF characters
+          // as we are passing a string to JsonResponse and not an array
+          return  new \Symfony\Component\HttpFoundation\JsonResponse(json_decode($outp));
+        }
+    
+        throw new NotFoundHttpException(t('No Units found for strandid: ' . $strandid));
     }
-
-    throw new NotFoundHttpException(t('No Countries found'));
+    throw new NotFoundHttpException(t('strand not provided'));
   }
 
     /**

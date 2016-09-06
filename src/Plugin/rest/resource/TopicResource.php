@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * Contains Drupal\learndojoapi\Plugin\rest\resource\CountryResource.
+ * Contains Drupal\learndojoapi\Plugin\rest\resource\TopicResource.
  */
 
 namespace Drupal\learndojoapi\Plugin\rest\resource;
@@ -17,18 +17,18 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 /**
- * Provides a resource to get learning dojo country by id.
+ * Provides a resource to get learning dojo topic by id.
  *
  * @RestResource(
- *   id = "country",
- *   label = @Translation("Learn Dojo Country"),
+ *   id = "topic",
+ *   label = @Translation("Learn Dojo Topic"),
  *   uri_paths = {
- *     "canonical" = "/api/country/{id}"
+ *     "canonical" = "/api/topic/{id}"
  *   }
  * )
 
  */
-class CountryResource extends ResourceBase {
+class TopicResource extends ResourceBase {
 
   /**
    *  A curent user instance.
@@ -51,8 +51,23 @@ class CountryResource extends ResourceBase {
    */
   public function get($id = NULL) {
       if ($id) {
-        $record = db_query("SELECT * FROM {kacountry} WHERE id = :id", array(':id' => $id))
-            ->fetchAllAssoc('id');
+        $record = db_query('SELECT h.id as countryid, h.name as countryname, 
+                a.id as missionid, a.name as missionname, 
+                b.id as strandid, b.name as strandname, 
+                c.id as unitid, c.name as unitname, 
+                d.id, d.name, d.description, d.corecontent, d.learning_outcome as learningoutcome, d.ka_topic as externalTopic, d.ka_url as externalUrl, 
+                d.difficultyindex, d.term_id as termid, d.weeknumber, 
+                d.topictype_id as topictypeid, e.name as topictypename, d.notes
+                FROM kamission a, kastrand b, kaunit c, katopic d, katopictype e, katerm f, kacountry h
+                where 
+                h.id = a.country_id AND
+                a.id = b.mission_id AND 
+                b.id = c.strand_id AND
+                c.id = d.unit_id AND
+                e.id = d.topictype_id AND
+                f.id = d.term_id AND
+                d.id = :id', array(':id' => $id))->fetchAllAssoc('id');
+                
         if (!empty($record)) {
             // need to turn off the cache on the results array so set the max-age to 0 by adding $results entity to the cache dependencies.
             // This will clear our cache when this entity updates.
@@ -60,19 +75,37 @@ class CountryResource extends ResourceBase {
             $renderer->addCacheableDependency($record, null);
           
             $outp = "[";
-            $outp .= '{"id":' . '"'  . $record[$id]->id . '",';
+            $outp .= '{"id":' . '"'  . $record[$id] -> id . '",';
             $outp .= '"name":"'   . $record[$id] -> name        . '",';
             $outp .= '"description":"'. $record[$id] -> description     . '",';
-            $outp .= '"last_update":"'. $record[$id] -> last_update     . '"}';
+            $outp .= '"corecontent":"'   . $record[$id] -> corecontent        . '",';
+            $outp .= '"learningoutcome":"'   . $record[$id] -> learningoutcome        . '",';
+            $outp .= '"externalTopic":"'   . $record[$id] -> externalTopic        . '",';
+            $outp .= '"externalUrl":"'   . $record[$id] -> externalUrl        . '",';
+            $outp .= '"difficultyindex":"'   . $record[$id] -> difficultyindex        . '",';
+            $outp .= '"termid":"'   . $record[$id] -> termid        . '",';
+            $outp .= '"weeknumber":"'   . $record[$id] -> weeknumber        . '",';
+            $outp .= '"topictypeid":"'   . $record[$id] -> topictypeid        . '",';
+            $outp .= '"topictypename":"'   . $record[$id] -> topictypename        . '",';
+            $outp .= '"notes":"'   . $record[$id] -> notes        . '",';            
+            $outp .= '"last_update":"'. $record[$id] -> last_update     . '",';
+            $outp .= '"countryid":"'. $record[$id] -> countryid     . '",';
+            $outp .= '"countryname":"'. $record[$id] -> countryname     . '",';
+            $outp .= '"missionid":"'. $record[$id] -> missionid     . '",';
+            $outp .= '"missionname":"'. $record[$id] -> missionname     . '",';            
+            $outp .= '"strandid":"'. $record[$id] -> strandid     . '",';
+            $outp .= '"strandname":"'. $record[$id] -> strandname     . '",';
+            $outp .= '"unitid":"'. $record[$id] -> unitid     . '",';
+            $outp .= '"unitname":"'. $record[$id] -> unitname     . '"}';
             $outp .="]";
     
             // note decoding JSON before returning it to avoid embedded "'s being converted to escaped UTF characters
             // as we are passing a string to JsonResponse and not an array
             return  new \Symfony\Component\HttpFoundation\JsonResponse(json_decode($outp));
         }
-        throw new NotFoundHttpException(t('Country with ID @id was not found', array('@id' => $id)));
+        throw new NotFoundHttpException(t('Topic with ID @id was not found', array('@id' => $id)));
     }
-    throw new NotFoundHttpException(t('ID not provided'));
+      throw new NotFoundHttpException(t('Topic ID not provided'));
   }
  
     /**
