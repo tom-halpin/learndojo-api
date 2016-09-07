@@ -77,12 +77,12 @@ class MissionStrandsResource extends ResourceBase {
 
             $i = $i + 1;
         }
-        $outp .="]}";
-    
-        // throw new NotFoundHttpException($outp);
         
-        //$outp1 = json_decode($outp);
-        //throw new NotFoundHttpException(json_last_error());
+        if ($i > 0)
+            $outp .="]}";
+        else {
+            $outp .="}";
+        }
             
         if ($i > 0) {
            // need to turn off the cache on the results array so set the max-age to 0 by adding $results entity to the cache dependencies.
