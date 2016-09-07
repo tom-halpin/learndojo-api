@@ -47,8 +47,12 @@ class StrandUnitsResource extends ResourceBase {
       if ($strandid) {
 
         $results = db_query("SELECT u.id, u.strand_id as strandid, u.name, u.description, u.last_update, 
-                             s.name as strandname, s.description as stranddescription FROM kaunit u, 
-                             kastrand s where u.strand_id = s.id and u.strand_id = :strandid", array(':strandid' => $strandid))->fetchAllAssoc('id');
+                             s.name as strandname, s.description as stranddescription, 
+                             s.mission_id as missionid, m.name as missionname,
+                             m.country_id as countryid, c.name as countryname  
+                             FROM kaunit u, kastrand s, kacountry c, kamission m where 
+                             s.mission_id = m.id and m.country_id = c.id and
+                             u.strand_id = s.id and u.strand_id = :strandid", array(':strandid' => $strandid))->fetchAllAssoc('id');
 
         $i = 0;
         $outp = "{";
@@ -56,6 +60,10 @@ class StrandUnitsResource extends ResourceBase {
 
             if ($i == 0){
                 // first row
+                $outp .= '"countryid":"'. $row -> countryid     . '",';
+                $outp .= '"countryname":"'. $row -> countryname     . '",';
+                $outp .= '"missionid":"'. $row -> missionid     . '",';
+                $outp .= '"missionname":"'. $row -> missionname     . '",';                
                 $outp .= '"strandid":"'. $row -> strandid     . '",';
                 $outp .= '"strandname":"'. $row -> strandname     . '",';
                 $outp .= '"stranddescription":"'. $row -> stranddescription. '",';

@@ -47,8 +47,11 @@ class MissionStrandsResource extends ResourceBase {
       if ($missionid) {
 
         $results = db_query("SELECT s.id, s.mission_id as missionid, s.name, s.description, s.last_update, 
-                             m.name as missionname, m.description as missiondescription FROM kastrand s, 
-                             kamission m where s.mission_id = m.id and s.mission_id = :missionid", array(':missionid' => $missionid))->fetchAllAssoc('id');
+                             m.name as missionname, m.description as missiondescription, 
+                             m.country_id as countryid, c.name as countryname 
+                             FROM kastrand s, kamission m, kacountry c where 
+                             s.mission_id = m.id and m.country_id = c.id 
+                             and s.mission_id = :missionid", array(':missionid' => $missionid))->fetchAllAssoc('id');
 
 
         $i = 0;
@@ -57,6 +60,8 @@ class MissionStrandsResource extends ResourceBase {
 
             if ($i == 0){
                 // first row
+                $outp .= '"countryid":"'. $row -> countryid     . '",';
+                $outp .= '"countryname":"'. $row -> countryname     . '",';                
                 $outp .= '"missionid":"'. $row -> missionid     . '",';
                 $outp .= '"missionname":"'. $row -> missionname     . '",';
                 $outp .= '"missiondescription":"'. $row -> missiondescription. '",';

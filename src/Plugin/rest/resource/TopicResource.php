@@ -54,7 +54,7 @@ class TopicResource extends ResourceBase {
         $record = db_query('SELECT h.id as countryid, h.name as countryname, 
                 a.id as missionid, a.name as missionname, 
                 b.id as strandid, b.name as strandname, 
-                c.id as unitid, c.name as unitname, 
+                c.id as unitid, c.name as unitname, c.description as unitdescription,
                 d.id, d.name, d.description, d.corecontent, d.learning_outcome as learningoutcome, d.ka_topic as externalTopic, d.ka_url as externalUrl, 
                 d.difficultyindex, d.term_id as termid, d.weeknumber, 
                 d.topictype_id as topictypeid, e.name as topictypename, d.notes
@@ -95,7 +95,8 @@ class TopicResource extends ResourceBase {
             $outp .= '"strandid":"'. $record[$id] -> strandid     . '",';
             $outp .= '"strandname":"'. $record[$id] -> strandname     . '",';
             $outp .= '"unitid":"'. $record[$id] -> unitid     . '",';
-            $outp .= '"unitname":"'. $record[$id] -> unitname     . '"}';
+            $outp .= '"unitname":"'. $record[$id] -> unitname     . '",';
+            $outp .= '"unitdescription":"'. $record[$id] -> unitdescription     . '"}';
     
             // note decoding JSON before returning it to avoid embedded "'s being converted to escaped UTF characters
             // as we are passing a string to JsonResponse and not an array

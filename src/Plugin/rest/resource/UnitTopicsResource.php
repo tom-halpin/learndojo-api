@@ -49,7 +49,7 @@ class UnitTopicsResource extends ResourceBase {
         $results = db_query('SELECT h.id as countryid, h.name as countryname, 
                 a.id as missionid, a.name as missionname, 
                 b.id as strandid, b.name as strandname, 
-                c.id as unitid, c.name as unitname, 
+                c.id as unitid, c.name as unitname, c.description as unitdescription,
                 d.id, d.name, d.description, d.corecontent, d.learning_outcome as learningoutcome, d.ka_topic as externalTopic, d.ka_url as externalUrl, 
                 d.difficultyindex, d.term_id as termid, d.weeknumber, 
                 d.topictype_id as topictypeid, e.name as topictypename, d.notes
@@ -77,6 +77,7 @@ class UnitTopicsResource extends ResourceBase {
                 $outp .= '"strandname":"'. $row -> strandname     . '",';                
                 $outp .= '"unitid":"'. $row -> unitid     . '",';
                 $outp .= '"unitname":"'. $row -> unitname     . '",';
+                $outp .= '"unitdescription":"'. $row -> unitdescription     . '",';
                 $outp .= '"topics": [{';             
             }
             else {

@@ -52,8 +52,13 @@ class UnitResource extends ResourceBase {
   public function get($id = NULL) {
       if ($id) {
         $record = db_query("SELECT u.id, u.strand_id as strandid, u.name, u.description, u.last_update, 
-                             s.name as strandname, s.description as stranddescription FROM kaunit u, 
-                             kastrand s where u.strand_id = s.id and u.id = :id", array(':id' => $id))->fetchAllAssoc('id');
+                             c.id as countryid, c.name as countryname, 
+                             m.id as missionid, m.name as missionname,
+                             s.name as strandname, s.description as stranddescription  
+                             FROM kaunit u, kastrand s, kamission m, kacountry c 
+                             where m.country_id = c.id and 
+                             s.mission_id = m.id and
+                             u.strand_id = s.id and u.id = :id", array(':id' => $id))->fetchAllAssoc('id');
         if (!empty($record)) {
             // need to turn off the cache on the results array so set the max-age to 0 by adding $results entity to the cache dependencies.
             // This will clear our cache when this entity updates.
@@ -64,6 +69,10 @@ class UnitResource extends ResourceBase {
             $outp .= '"name":"'   . $record[$id] -> name        . '",';
             $outp .= '"description":"'. $record[$id] -> description     . '",';
             $outp .= '"last_update":"'. $record[$id] -> last_update     . '",';
+            $outp .= '"countryid":"'. $row -> countryid     . '",';
+            $outp .= '"countryname":"'. $row -> countryname     . '",';
+            $outp .= '"missionid":"'. $row -> missionid     . '",';
+            $outp .= '"missionname":"'. $row -> missionname     . '",';            
             $outp .= '"strandid":"'. $record[$id] -> strandid     . '",';
             $outp .= '"strandname":"'. $record[$id] -> strandname     . '",';
             $outp .= '"stranddescription":"'. $record[$id] -> stranddescription     . '"}';

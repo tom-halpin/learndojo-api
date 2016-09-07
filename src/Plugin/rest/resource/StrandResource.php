@@ -52,8 +52,12 @@ class StrandResource extends ResourceBase {
   public function get($id = NULL) {
       if ($id) {
         $record = db_query("SELECT s.id, s.mission_id as missionid, s.name, s.description, s.last_update, 
-                             m.name as missionname, m.description as missiondescription FROM kastrand s, 
-                             kamission m where s.mission_id = m.id and s.id = :id", array(':id' => $id))->fetchAllAssoc('id');
+                             m.name as missionname, m.description as missiondescription, 
+                             m.country_id as countryid, c.name as countryname 
+                             FROM kastrand s, kamission m, kacountry c where 
+                             s.mission_id = m.id and 
+                             m.country_id = c.id and
+                             s.id = :id", array(':id' => $id))->fetchAllAssoc('id');
         if (!empty($record)) {
             // need to turn off the cache on the results array so set the max-age to 0 by adding $results entity to the cache dependencies.
             // This will clear our cache when this entity updates.
@@ -64,6 +68,8 @@ class StrandResource extends ResourceBase {
             $outp .= '"name":"'   . $record[$id] -> name        . '",';
             $outp .= '"description":"'. $record[$id] -> description     . '",';
             $outp .= '"last_update":"'. $record[$id] -> last_update     . '",';
+            $outp .= '"countryid":"'. $record[$id] -> countryid     . '",';
+            $outp .= '"countryname":"'. $record[$id] -> countryname     . '",';
             $outp .= '"missionid":"'. $record[$id] -> missionid     . '",';
             $outp .= '"missionname":"'. $record[$id] -> missionname     . '",';
             $outp .= '"missiondescription":"'. $record[$id] -> missiondescription     . '"}';
