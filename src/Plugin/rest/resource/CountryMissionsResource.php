@@ -70,7 +70,12 @@ class CountryMissionsResource extends ResourceBase {
 
             $i = $i + 1;
         }
-        $outp .="]}";
+        
+        if ($i > 0)
+            $outp .="]}";
+        else {
+        	$outp .="}";
+        }
     
         if ($i > 0) {
            // need to turn off the cache on the results array so set the max-age to 0 by adding $results entity to the cache dependencies.
