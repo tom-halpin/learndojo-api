@@ -57,7 +57,7 @@ class TopicResource extends ResourceBase {
                 c.id as unitid, c.name as unitname, c.description as unitdescription,
                 d.id, d.name, d.description, d.corecontent, d.learning_outcome as learningoutcome, d.ka_topic as externalTopic, d.ka_url as externalUrl, 
                 d.difficultyindex, d.term_id as termid, d.weeknumber, 
-                d.topictype_id as topictypeid, e.name as topictypename, d.notes
+                d.topictype_id as topictypeid, e.name as topictypename, d.notes, d.last_update
                 FROM kamission a, kastrand b, kaunit c, katopic d, katopictype e, katerm f, kacountry h
                 where 
                 h.id = a.country_id AND
