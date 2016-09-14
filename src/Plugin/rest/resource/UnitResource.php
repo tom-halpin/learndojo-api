@@ -65,7 +65,7 @@ class UnitResource extends ResourceBase {
             $renderer = \Drupal::service('renderer');
             $renderer->addCacheableDependency($record, null);
           
-            $outp .= '{"id":' . '"'  . $record[$id] -> id . '",';
+            $outp = '{"id":' . '"'  . $record[$id] -> id . '",';
             $outp .= '"name":"'   . $record[$id] -> name        . '",';
             $outp .= '"description":"'. $record[$id] -> description     . '",';
             $outp .= '"last_update":"'. $record[$id] -> last_update     . '",';
