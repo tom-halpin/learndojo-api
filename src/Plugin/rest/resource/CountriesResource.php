@@ -45,21 +45,59 @@ class CountriesResource extends ResourceBase {
    */
   public function get() {
 
-    $results = db_query('SELECT * FROM {kacountry} ')->fetchAllAssoc('id');
+    $results = db_query('SELECT  c.id, c.name, c.description, c.last_update, t.id as termid, t.name as termname, t.description as termdescription, 
+                         start_date as startdate, date_add(start_date, INTERVAL num_weeks WEEK) as enddate, num_weeks as numweeks 
+                         FROM kacountry c LEFT JOIN katerm t 
+                         ON t.country_id = c.id ORDER BY c.id asc')->fetchAll();
+   
+   // create country array
+    $countries = array();
     $i = 0;
-
-    $outp = "[";
-    foreach ($results as $row) {
-    if ($outp != "[") {$outp .= ",";}
-    
-        $outp .= '{"id":' . '"'  . $row -> id . '",';
-        $outp .= '"name":"'   . $row -> name        . '",';
-        $outp .= '"description":"'. $row -> description     . '",';
-        $outp .= '"last_update":"'. $row -> last_update     . '"}';
-        $i = $i + 1;
+    foreach($results as $row)
+    {
+      $id = $row -> id;
+      // if we already have an element for this country reuse it otherwise create it
+      if (isset($countries[$id]))
+      { 
+        $item = $countries[$id];
+      }
+      else
+      {
+        $item = array
+        (
+          'countryid' => $row -> id,
+          'countryname' => $row -> name,
+          'countrydescription' => $row -> description,
+          'terms' => array() // create terms array for country
+        );
+      }
+      $termid = $row -> termid;
+      // are terms defined for the country if so add them 
+      if($termid !== null)
+      {
+          $term = array 
+          (
+              'termid' => $termid,
+              'termname' => $row -> termname,
+              'termdescription' => $row -> termdescription,
+              'startdate' => $row -> startdate,
+              'enddate' => $row -> enddate,
+              'numweeks' => $row -> numweeks,
+          );
+          $item['terms'][] = $term;
+      }
+      // update country element
+      $countries[$id] = $item;
+      $i = $i + 1;
     }
-    $outp .= "]";
 
+    // preformat the arrays to faciliate conversion to JSON in the required format
+    $retCountries = array();
+    foreach ($countries as $countryrow)
+    {
+        $retCountries[] = $countryrow;
+        
+    }
     if ($i > 0) {
        // need to turn off the cache on the results array so set the max-age to 0 by adding $results entity to the cache dependencies.
       // This will clear our cache when this entity updates.
@@ -67,7 +105,7 @@ class CountriesResource extends ResourceBase {
       $renderer->addCacheableDependency($results, null);
       // note decoding JSON before returning it to avoid embedded "'s being converted to escaped UTF characters
       // as we are passing a string to JsonResponse and not an array
-      return  new \Symfony\Component\HttpFoundation\JsonResponse(json_decode($outp));
+      return  new \Symfony\Component\HttpFoundation\JsonResponse($retCountries);
     }
 
     throw new NotFoundHttpException(t('No Countries found'));
