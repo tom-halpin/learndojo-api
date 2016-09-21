@@ -69,10 +69,10 @@ class UnitResource extends ResourceBase {
             $outp .= '"name":"'   . $record[$id] -> name        . '",';
             $outp .= '"description":"'. $record[$id] -> description     . '",';
             $outp .= '"last_update":"'. $record[$id] -> last_update     . '",';
-            $outp .= '"countryid":"'. $row -> countryid     . '",';
-            $outp .= '"countryname":"'. $row -> countryname     . '",';
-            $outp .= '"missionid":"'. $row -> missionid     . '",';
-            $outp .= '"missionname":"'. $row -> missionname     . '",';            
+            $outp .= '"countryid":"'. $record[$id] -> countryid     . '",';
+            $outp .= '"countryname":"'. $record[$id] -> countryname     . '",';
+            $outp .= '"missionid":"'. $record[$id] -> missionid     . '",';
+            $outp .= '"missionname":"'. $record[$id] -> missionname     . '",';            
             $outp .= '"strandid":"'. $record[$id] -> strandid     . '",';
             $outp .= '"strandname":"'. $record[$id] -> strandname     . '",';
             $outp .= '"stranddescription":"'. $record[$id] -> stranddescription     . '"}';

@@ -51,23 +51,74 @@ class CountryResource extends ResourceBase {
    */
   public function get($id = NULL) {
       if ($id) {
-        $record = db_query("SELECT * FROM {kacountry} WHERE id = :id", array(':id' => $id))
-            ->fetchAllAssoc('id');
-        if (!empty($record)) {
-            // need to turn off the cache on the results array so set the max-age to 0 by adding $results entity to the cache dependencies.
-            // This will clear our cache when this entity updates.
-            $renderer = \Drupal::service('renderer');
-            $renderer->addCacheableDependency($record, null);
-          
-            $outp = '{"id":' . '"'  . $record[$id]->id . '",';
-            $outp .= '"name":"'   . $record[$id] -> name        . '",';
-            $outp .= '"description":"'. $record[$id] -> description     . '",';
-            $outp .= '"last_update":"'. $record[$id] -> last_update     . '"}';
-    
-            // note decoding JSON before returning it to avoid embedded "'s being converted to escaped UTF characters
-            // as we are passing a string to JsonResponse and not an array
-            return  new \Symfony\Component\HttpFoundation\JsonResponse(json_decode($outp));
+                           
+        $results = db_query("SELECT  c.id as id, c.name as name, c.description as description, c.last_update as last_update, 
+                            t.id as termid, t.name as termname, t.description as termdescription, 
+                            t.start_date as startdate, date_add(t.start_date, INTERVAL num_weeks WEEK) as enddate, t.num_weeks as numweeks 
+                            FROM kacountry c left join katerm t 
+                            on c.id = t.country_id where c.id = :id", array(':id' => $id))->fetchAll();
+        $i = 0;
+        // create country array
+        $countries = array();
+        $i = 0;
+        foreach($results as $row)
+        {
+          $id = $row -> id;
+          // if we already have an element for this country reuse it otherwise create it
+          if (isset($countries[$id]))
+          { 
+            $item = $countries[$id];
+          }
+          else
+          {
+            $item = array
+            (
+              'countryid' => $row -> id,
+              'countryname' => $row -> name,
+              'countrydescription' => $row -> description,
+              'terms' => array() // create terms array for country
+            );
+          }
+          $termid = $row -> termid;
+          // are terms defined for the country if so add them 
+          if($termid !== null)
+          {
+              $term = array 
+              (
+                  'termid' => $termid,
+                  'termname' => $row -> termname,
+                  'termdescription' => $row -> termdescription,
+                  'startdate' => $row -> startdate,
+                  'enddate' => $row -> enddate,
+                  'numweeks' => $row -> numweeks,
+              );
+              $item['terms'][] = $term;
+          }
+          // update country element
+          $countries[$id] = $item;
+          $i = $i + 1;
         }
+
+        // preformat the arrays to faciliate conversion to JSON in the required format
+        // as we are selecting by id should only be one.
+        $retCountries = array();
+        foreach ($countries as $countryrow)
+        {
+            $retCountries = $countryrow;
+            
+        }
+    
+        if ($i > 0) {
+           // need to turn off the cache on the results array so set the max-age to 0 by adding $results entity to the cache dependencies.
+          // This will clear our cache when this entity updates.
+          $renderer = \Drupal::service('renderer');
+          $renderer->addCacheableDependency($results, null);
+
+          // note decoding JSON before returning it to avoid embedded "'s being converted to escaped UTF characters
+          // as we are passing a string to JsonResponse and not an array
+          return  new \Symfony\Component\HttpFoundation\JsonResponse($retCountries);
+        }
+                
         throw new NotFoundHttpException(t('Country with ID @id was not found', array('@id' => $id)));
     }
     throw new NotFoundHttpException(t('ID not provided'));
