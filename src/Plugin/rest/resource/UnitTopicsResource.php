@@ -44,12 +44,13 @@ class UnitTopicsResource extends ResourceBase {
    * Responds to GET requests.
    */
   public function get($unitid = NULL) {
-      if ($unitid) {
+    if ($unitid) {
 
-        $results = db_query('SELECT h.id as countryid, h.name as countryname, 
+        $results = db_query('SELECT 
+                c.id as unitid, c.name as unitname, c.description as unitdescription,
+                h.id as countryid, h.name as countryname, 
                 a.id as missionid, a.name as missionname, 
                 b.id as strandid, b.name as strandname, 
-                c.id as unitid, c.name as unitname, c.description as unitdescription,
                 d.id, d.name, d.description, d.corecontent, d.learning_outcome as learningoutcome, d.ka_topic as externalTopic, d.ka_url as externalUrl, 
                 d.difficultyindex, d.term_id as termid, d.weeknumber, 
                 d.topictype_id as topictypeid, e.name as topictypename, d.notes
@@ -61,60 +62,96 @@ class UnitTopicsResource extends ResourceBase {
                 c.id = d.unit_id AND
                 e.id = d.topictype_id AND
                 f.id = d.term_id AND
-                d.unit_id = :unitid', array(':unitid' => $unitid))->fetchAllAssoc('id');
-
-        $i = 0;
-        $outp = "{";
-        foreach ($results as $row) {
-
-            if ($i == 0){
-                // first row
-                $outp .= '"countryid":"'. $row -> countryid     . '",';
-                $outp .= '"countryname":"'. $row -> countryname     . '",';
-                $outp .= '"missionid":"'. $row -> missionid     . '",';
-                $outp .= '"missionname":"'. $row -> missionname     . '",';            
-                $outp .= '"strandid":"'. $row -> strandid     . '",';
-                $outp .= '"strandname":"'. $row -> strandname     . '",';                
-                $outp .= '"unitid":"'. $row -> unitid     . '",';
-                $outp .= '"unitname":"'. $row -> unitname     . '",';
-                $outp .= '"unitdescription":"'. $row -> unitdescription     . '",';
-                $outp .= '"topics": [{';             
-            }
-            else {
-                $outp .= ',{';
-            }
-            $outp .= '"id":"'. $row -> id     . '",';
-            $outp .= '"name":"'. $row -> name     . '",';
-            $outp .= '"description":"'. $row -> description. '",';                
-            $outp .= '"corecontent":"'   . $row -> corecontent        . '",';
-            $outp .= '"learningoutcome":"'   . $row -> learningoutcome        . '",';
-            $outp .= '"externalTopic":"'   . $row -> externalTopic        . '",';
-            $outp .= '"externalUrl":"'   . $row -> externalUrl        . '",';
-            $outp .= '"difficultyindex":"'   . $row -> difficultyindex        . '",';
-            $outp .= '"termid":"'   . $row -> termid        . '",';
-            $outp .= '"weeknumber":"'   . $row -> weeknumber        . '",';
-            $outp .= '"topictypeid":"'   . $row -> topictypeid        . '",';
-            $outp .= '"topictypename":"'   . $row -> topictypename        . '",';
-            $outp .= '"notes":"'   . $row -> notes        . '"}';            
-            $i = $i + 1;
-        }
-
-        if ($i > 0)
-            $outp .="]}";
-        else {
-            $outp .="}";
-        }
+                d.unit_id = :unitid', array(':unitid' => $unitid))->fetchAll();
+           
+        // create unittopics array
+        $unittopics = array();
         
-        if ($i > 0) {
-           // need to turn off the cache on the results array so set the max-age to 0 by adding $results entity to the cache dependencies.
-          // This will clear our cache when this entity updates.
-          $renderer = \Drupal::service('renderer');
-          $renderer->addCacheableDependency($results, null);
+        $i = 0;
+        foreach($results as $row)
+        {
+           // if defined retrieve reference to existing unittopic information else create and initialise a new one for this row of data
+          if (isset($unittopics['unittopics']))
+          { 
+            $unittopicitem = $unittopics['unittopics'];
+          }
+          else
+          {
+            $unittopicitem = array
+            (
+              'countryid' => $row -> countryid,
+              'countryname' => $row -> countryname,
+              'missionid' => $row -> missionid,
+              'missionname' => $row -> missionname,
+              'strandid' => $row -> strandid,
+              'strandname' => $row -> strandname,
+              'unitid' => $row -> unitid,
+              'unitname' => $row -> unitname,
+              'unitdescription' => $row -> unitdescription, 
+              'topics' => array() // create topics array for unit
+            );
+            $unittopics['unittopics'] = $unittopicitem;
+          }
+                    
+          $topicid = $row -> id;
+          
+          // if defined retrieve reference to existing topic information else create and initialise a new one for this row of data
+          $newtopicitem = false;
+          $topicitem = null;
+          $topickey = null;
+          
+          foreach ($unittopicitem['topics']['id'] as $key => $value) 
+          {
+            if($unittopicitem['topics'][$key] === $topicid)
+            {
+              $topicitem = $unittopicitem['topics'][$key];
+              $topickey = $key;
+              break;
+            }
+          }
+          
+          if(isset($topicitem) == false)
+          {
+            $topicitem = array
+            (
+              'id' => $topicid,
+              'name' => $row -> name,
+              'description' => $row -> description,
+              'corecontent' => $row -> corecontent,
+              'learningoutcome' => $row -> learningoutcome,
+              'externalTopic' => $row -> externalTopic,
+              'externalUrl' => $row -> externalUrl,
+              'difficultyindex' => $row -> difficultyindex,
+              'termid' => $row -> termid,
+              'weeknumber' => $row -> weeknumber,
+              'topictypeid' => $row -> topictypeid,
+              'topictypename' => $row -> topictypename,
+              'notes' => $row -> notes
+            );
+            $newtopicitem = true;            
+          }
+          
+          // if previously flagged that we created a new topic item add to the topics array for the unit, otherwise update the exising topic item for the unit
+          if($newtopicitem)
+          {
+            $unittopicitem['topics'][] = $topicitem;
+          }
+          else {
+            $unittopicitem['topics'][$topickey] = $topicitem;
+          }
+          // update the root array with the updated arrays
+          $unittopics['unittopics'] = $unittopicitem;
+          $i = $i + 1;
+    }
 
-          // note decoding JSON before returning it to avoid embedded "'s being converted to escaped UTF characters
-          // as we are passing a string to JsonResponse and not an array
-          return  new \Symfony\Component\HttpFoundation\JsonResponse(json_decode($outp));
-        }
+    if ($i > 0) {
+       // need to turn off the cache on the results array so set the max-age to 0 by adding $results entity to the cache dependencies.
+      // This will clear our cache when this entity updates.
+      $renderer = \Drupal::service('renderer');
+      $renderer->addCacheableDependency($results, null);
+
+      return  new \Symfony\Component\HttpFoundation\JsonResponse($unittopics);
+    }
     
         throw new NotFoundHttpException(t('No Topics found for unit id: ' . $unitid));
     }

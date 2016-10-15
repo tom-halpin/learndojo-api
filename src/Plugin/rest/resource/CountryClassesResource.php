@@ -211,8 +211,6 @@ class CountryClassesResource extends ResourceBase {
           $renderer = \Drupal::service('renderer');
           $renderer->addCacheableDependency($results, null);
 
-          // note decoding JSON before returning it to avoid embedded "'s being converted to escaped UTF characters
-          // as we are passing a string to JsonResponse and not an array
           return  new \Symfony\Component\HttpFoundation\JsonResponse($classes);
         }
     

@@ -48,44 +48,80 @@ class CountryMissionsResource extends ResourceBase {
 
         $results = db_query("SELECT m.id, m.country_id as countryid, m.name, m.description, m.last_update, 
                              c.name as countryname, c.description as countrydescription FROM kamission m, 
-                             kacountry c where m.country_id = c.id and m.country_id = :countryid", array(':countryid' => $countryid))->fetchAllAssoc('id');
+                             kacountry c where m.country_id = c.id and m.country_id = :countryid", array(':countryid' => $countryid))->fetchAll();
+                             
         $i = 0;
-        $outp = "{";
-        foreach ($results as $row) {
+        // create countrymissions array
+        $countrymissions = array();
 
-            if ($i == 0){
-                // first row
-                $outp .= '"countryid":"'. $row -> countryid     . '",';
-                $outp .= '"countryname":"'. $row -> countryname     . '",';
-                $outp .= '"countrydescription":"'. $row -> countrydescription. '",';
-                $outp .= '"missions": [{';        	   
+        foreach($results as $row)
+        {
+           // if defined retrieve reference to existing countrymission information else create and initialise a new one for this row of data
+          if (isset($countrymissions['countrymissions']))
+          { 
+            $countrymissionitem = $countrymissions['countrymissions'];
+          }
+          else
+          {
+            $countrymissionitem = array
+            (
+              'countryid' => $row -> countryid,
+              'countryname' => $row -> countryname,
+              'countrydescription' => $row -> countrydescription,
+              'missions' => array() // create mission array for country
+            );
+            $countrymissions['countrymissions'] = $countrymissionitem;
+          }
+                    
+          $missionid = $row -> id;
+          
+          // if defined retrieve reference to existing mission information else create and initialise a new one for this row of data
+          $newmissionitem = false;
+          $missionitem = null;
+          $missionkey = null;
+          
+          foreach ($countrymissionitem['missions']['id'] as $key => $value) 
+          {
+            if($countrymissionitem['missions'][$key] === $missionid)
+            {
+              $missionitem = $countrymissionitem['missions'][$key];
+              $missionkey = $key;
+              break;
             }
-            else {
-                $outp .= ',{';
-            }
-            $outp .= '"id":' . '"'  . $row -> id . '",';
-            $outp .= '"name":"'   . $row -> name        . '",';
-            $outp .= '"description":"'. $row -> description     . '",';
-            $outp .= '"last_update":"'. $row -> last_update . '"}';
+          }
+          
+          if(isset($missionitem) == false)
+          {
+            $missionitem = array
+            (
+              'id' => $missionid,
+              'name' => $row -> name,
+              'description' => $row -> description,
+              'last_update' => $row -> last_update
+            );
+            $newmissionitem = true;            
+          }
+          
+          // if previously flagged that we created a new mission item add to the missions array for the country, otherwise update the exising mission item for the country
+          if($newmissionitem)
+          {
+            $countrymissionitem['missions'][] = $missionitem;
+          }
+          else {
+            $countrymissionitem['missions'][$missionkey] = $missionitem;
+          }
+          // update the root array with the updated arrays
+          $countrymissions['countrymissions'] = $countrymissionitem;
+          $i = $i + 1;
+        }
 
-            $i = $i + 1;
-        }
-        
-        if ($i > 0)
-            $outp .="]}";
-        else {
-        	$outp .="}";
-        }
-    
         if ($i > 0) {
            // need to turn off the cache on the results array so set the max-age to 0 by adding $results entity to the cache dependencies.
           // This will clear our cache when this entity updates.
           $renderer = \Drupal::service('renderer');
           $renderer->addCacheableDependency($results, null);
 
-          // note decoding JSON before returning it to avoid embedded "'s being converted to escaped UTF characters
-          // as we are passing a string to JsonResponse and not an array
-          return  new \Symfony\Component\HttpFoundation\JsonResponse(json_decode($outp));
+          return  new \Symfony\Component\HttpFoundation\JsonResponse($countrymissions);
         }
     
         throw new NotFoundHttpException(t('No Missions found for countryid: ' . $countryid));

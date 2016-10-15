@@ -51,7 +51,7 @@ class TopicResource extends ResourceBase {
    */
   public function get($id = NULL) {
       if ($id) {
-        $record = db_query('SELECT h.id as countryid, h.name as countryname, 
+        $results = db_query('SELECT h.id as countryid, h.name as countryname, 
                 a.id as missionid, a.name as missionname, 
                 b.id as strandid, b.name as strandname, 
                 c.id as unitid, c.name as unitname, c.description as unitdescription,
@@ -66,42 +66,71 @@ class TopicResource extends ResourceBase {
                 c.id = d.unit_id AND
                 e.id = d.topictype_id AND
                 f.id = d.term_id AND
-                d.id = :id', array(':id' => $id))->fetchAllAssoc('id');
-                
-        if (!empty($record)) {
-            // need to turn off the cache on the results array so set the max-age to 0 by adding $results entity to the cache dependencies.
-            // This will clear our cache when this entity updates.
-            $renderer = \Drupal::service('renderer');
-            $renderer->addCacheableDependency($record, null);
-          
-            $outp = '{"id":' . '"'  . $record[$id] -> id . '",';
-            $outp .= '"name":"'   . $record[$id] -> name        . '",';
-            $outp .= '"description":"'. $record[$id] -> description     . '",';
-            $outp .= '"corecontent":"'   . $record[$id] -> corecontent        . '",';
-            $outp .= '"learningoutcome":"'   . $record[$id] -> learningoutcome        . '",';
-            $outp .= '"externalTopic":"'   . $record[$id] -> externalTopic        . '",';
-            $outp .= '"externalUrl":"'   . $record[$id] -> externalUrl        . '",';
-            $outp .= '"difficultyindex":"'   . $record[$id] -> difficultyindex        . '",';
-            $outp .= '"termid":"'   . $record[$id] -> termid        . '",';
-            $outp .= '"weeknumber":"'   . $record[$id] -> weeknumber        . '",';
-            $outp .= '"topictypeid":"'   . $record[$id] -> topictypeid        . '",';
-            $outp .= '"topictypename":"'   . $record[$id] -> topictypename        . '",';
-            $outp .= '"notes":"'   . $record[$id] -> notes        . '",';            
-            $outp .= '"last_update":"'. $record[$id] -> last_update     . '",';
-            $outp .= '"countryid":"'. $record[$id] -> countryid     . '",';
-            $outp .= '"countryname":"'. $record[$id] -> countryname     . '",';
-            $outp .= '"missionid":"'. $record[$id] -> missionid     . '",';
-            $outp .= '"missionname":"'. $record[$id] -> missionname     . '",';            
-            $outp .= '"strandid":"'. $record[$id] -> strandid     . '",';
-            $outp .= '"strandname":"'. $record[$id] -> strandname     . '",';
-            $outp .= '"unitid":"'. $record[$id] -> unitid     . '",';
-            $outp .= '"unitname":"'. $record[$id] -> unitname     . '",';
-            $outp .= '"unitdescription":"'. $record[$id] -> unitdescription     . '"}';
-    
-            // note decoding JSON before returning it to avoid embedded "'s being converted to escaped UTF characters
-            // as we are passing a string to JsonResponse and not an array
-            return  new \Symfony\Component\HttpFoundation\JsonResponse(json_decode($outp));
+                d.id = :id', array(':id' => $id))->fetchAll();
+
+
+        $topics = array("unit");
+        $i = 0;
+        foreach($results as $row)
+        {
+          $id = $row -> id;
+          // if we already have an element for this mission reuse it otherwise create it should only be one
+          if (isset($topics[$id]))
+          { 
+            $item = $topics[$id];
+          }
+          else
+          {
+            $item = array
+            (
+              'id' => $row -> id,
+              'name' => $row -> name,
+              'description' => $row -> description,
+              'corecontent' => $row -> corecontent,
+              'learningoutcome' => $row -> learningoutcome,
+              'externalTopic' => $row -> externalTopic,
+              'externalUrl' => $row -> externalUrl,
+              'difficultyindex' => $row -> difficultyindex,
+              'termid' => $row -> termid,
+              'weeknumber' => $row -> weeknumber,
+              'topictypeid' => $row -> topictypeid,
+              'topictypename' => $row -> topictypename,
+              'notes' => $row -> notes,               
+              'last_update' => $row -> last_update,
+              'countryid' => $row -> countryid,
+              'countryname' => $row -> countryname,
+              'missionid' => $row -> missionid,
+              'missionname' => $row -> missionname,
+              'strandid' => $row -> strandid,
+              'strandname' => $row -> strandname,
+              'unitid' => $row -> unitid,
+              'unitname' => $row -> unitname,
+              'unitdescription' => $row -> unitdescription                                           
+            );
+          }
+          // update country element
+          $topics[$id] = $item;
+          $i = $i + 1;
         }
+
+        // preformat the arrays to faciliate conversion to JSON in the required format
+        // as we are selecting by id should only be one.
+        $retTopics = array();
+        foreach ($topics as $topicrow)
+        {
+            $retTopics = $topicrow;
+            
+        }
+    
+        if ($i > 0) {
+           // need to turn off the cache on the results array so set the max-age to 0 by adding $results entity to the cache dependencies.
+          // This will clear our cache when this entity updates.
+          $renderer = \Drupal::service('renderer');
+          $renderer->addCacheableDependency($results, null);
+
+          return  new \Symfony\Component\HttpFoundation\JsonResponse($retTopics);
+        }
+                        
         throw new NotFoundHttpException(t('Topic with ID @id was not found', array('@id' => $id)));
     }
       throw new NotFoundHttpException(t('Topic ID not provided'));

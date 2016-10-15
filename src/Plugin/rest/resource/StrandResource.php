@@ -51,33 +51,62 @@ class StrandResource extends ResourceBase {
    */
   public function get($id = NULL) {
       if ($id) {
-        $record = db_query("SELECT s.id, s.mission_id as missionid, s.name, s.description, s.last_update, 
+        $results = db_query("SELECT s.id, s.mission_id as missionid, s.name, s.description, s.last_update, 
                              m.name as missionname, m.description as missiondescription, 
                              m.country_id as countryid, c.name as countryname 
                              FROM kastrand s, kamission m, kacountry c where 
                              s.mission_id = m.id and 
                              m.country_id = c.id and
-                             s.id = :id", array(':id' => $id))->fetchAllAssoc('id');
-        if (!empty($record)) {
-            // need to turn off the cache on the results array so set the max-age to 0 by adding $results entity to the cache dependencies.
-            // This will clear our cache when this entity updates.
-            $renderer = \Drupal::service('renderer');
-            $renderer->addCacheableDependency($record, null);
-          
-            $outp = '{"id":' . '"'  . $record[$id] -> id . '",';
-            $outp .= '"name":"'   . $record[$id] -> name        . '",';
-            $outp .= '"description":"'. $record[$id] -> description     . '",';
-            $outp .= '"last_update":"'. $record[$id] -> last_update     . '",';
-            $outp .= '"countryid":"'. $record[$id] -> countryid     . '",';
-            $outp .= '"countryname":"'. $record[$id] -> countryname     . '",';
-            $outp .= '"missionid":"'. $record[$id] -> missionid     . '",';
-            $outp .= '"missionname":"'. $record[$id] -> missionname     . '",';
-            $outp .= '"missiondescription":"'. $record[$id] -> missiondescription     . '"}';
-    
-            // note decoding JSON before returning it to avoid embedded "'s being converted to escaped UTF characters
-            // as we are passing a string to JsonResponse and not an array
-            return  new \Symfony\Component\HttpFoundation\JsonResponse(json_decode($outp));
+                             s.id = :id", array(':id' => $id))->fetchAll();
+
+       $strands = array("strand");
+        $i = 0;
+        foreach($results as $row)
+        {
+          $id = $row -> id;
+          // if we already have an element for this mission reuse it otherwise create it should only be one
+          if (isset($strands[$id]))
+          { 
+            $item = $strands[$id];
+          }
+          else
+          {
+            $item = array
+            (
+              'id' => $row -> id,
+              'name' => $row -> name,
+              'description' => $row -> description,
+              'last_update' => $row -> last_update,
+              'countryid' => $row -> countryid,
+              'countryname' => $row -> countryname,
+              'missionid' => $row -> missionid,
+              'missionname' => $row -> missionname,
+              'missiondescription' => $row -> missiondescription             
+            );
+          }
+          // update country element
+          $strands[$id] = $item;
+          $i = $i + 1;
         }
+
+        // preformat the arrays to faciliate conversion to JSON in the required format
+        // as we are selecting by id should only be one.
+        $retStrands = array();
+        foreach ($strands as $strandrow)
+        {
+            $retStrands = $strandrow;
+            
+        }
+    
+        if ($i > 0) {
+           // need to turn off the cache on the results array so set the max-age to 0 by adding $results entity to the cache dependencies.
+          // This will clear our cache when this entity updates.
+          $renderer = \Drupal::service('renderer');
+          $renderer->addCacheableDependency($results, null);
+
+          return  new \Symfony\Component\HttpFoundation\JsonResponse($retStrands);
+        }
+                
         throw new NotFoundHttpException(t('Strand with ID @id was not found', array('@id' => $id)));
     }
       throw new NotFoundHttpException(t('Strand ID not provided'));

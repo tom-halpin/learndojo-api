@@ -57,9 +57,9 @@ class CountriesResource extends ResourceBase {
     {
       $id = $row -> id;
       // if we already have an element for this country reuse it otherwise create it
-      if (isset($countries[$id]))
+      if (isset($countries["countries"]))
       { 
-        $item = $countries[$id];
+        $item = $countries["countries"];
       }
       else
       {
@@ -70,7 +70,9 @@ class CountriesResource extends ResourceBase {
           'countrydescription' => $row -> description,
           'terms' => array() // create terms array for country
         );
+        $countries["countries"] = $item;
       }
+
       $termid = $row -> termid;
       // are terms defined for the country if so add them 
       if($termid !== null)
@@ -86,26 +88,18 @@ class CountriesResource extends ResourceBase {
           );
           $item['terms'][] = $term;
       }
-      // update country element
-      $countries[$id] = $item;
+     // update the root array with the updated arrays
+     $countries["countries"] = $item;     
       $i = $i + 1;
     }
 
-    // preformat the arrays to faciliate conversion to JSON in the required format
-    $retCountries = array();
-    foreach ($countries as $countryrow)
-    {
-        $retCountries[] = $countryrow;
-        
-    }
     if ($i > 0) {
        // need to turn off the cache on the results array so set the max-age to 0 by adding $results entity to the cache dependencies.
       // This will clear our cache when this entity updates.
       $renderer = \Drupal::service('renderer');
       $renderer->addCacheableDependency($results, null);
-      // note decoding JSON before returning it to avoid embedded "'s being converted to escaped UTF characters
-      // as we are passing a string to JsonResponse and not an array
-      return  new \Symfony\Component\HttpFoundation\JsonResponse($retCountries);
+
+      return  new \Symfony\Component\HttpFoundation\JsonResponse($countries);
     }
 
     throw new NotFoundHttpException(t('No Countries found'));
