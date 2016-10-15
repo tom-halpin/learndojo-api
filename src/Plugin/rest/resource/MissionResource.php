@@ -51,27 +51,57 @@ class MissionResource extends ResourceBase {
    */
   public function get($id = NULL) {
       if ($id) {
-        $record = db_query("SELECT m.id, m.country_id as countryid, m.name, m.description, m.last_update, 
+        $results = db_query("SELECT m.id, m.country_id as countryid, m.name, m.description, m.last_update, 
                              c.name as countryname, c.description as countrydescription FROM kamission m, 
-                             kacountry c where m.country_id = c.id and m.id = :id", array(':id' => $id))->fetchAllAssoc('id');
-        if (!empty($record)) {
-            // need to turn off the cache on the results array so set the max-age to 0 by adding $results entity to the cache dependencies.
-            // This will clear our cache when this entity updates.
-            $renderer = \Drupal::service('renderer');
-            $renderer->addCacheableDependency($record, null);
-          
-            $outp = '{"id":' . '"'  . $record[$id] -> id . '",';
-            $outp .= '"name":"'   . $record[$id] -> name        . '",';
-            $outp .= '"description":"'. $record[$id] -> description     . '",';
-            $outp .= '"last_update":"'. $record[$id] -> last_update     . '",';
-            $outp .= '"countryid":"'. $record[$id] -> countryid     . '",';
-            $outp .= '"countryname":"'. $record[$id] -> countryname     . '",';
-            $outp .= '"countrydescription":"'. $record[$id] -> countrydescription     . '"}';
-    
-            // note decoding JSON before returning it to avoid embedded "'s being converted to escaped UTF characters
-            // as we are passing a string to JsonResponse and not an array
-            return  new \Symfony\Component\HttpFoundation\JsonResponse(json_decode($outp));
+                             kacountry c where m.country_id = c.id and m.id = :id", array(':id' => $id))->fetchAll();
+
+        // create mission array
+        $missions = array("mission");
+        $i = 0;
+        foreach($results as $row)
+        {
+          $id = $row -> id;
+          // if we already have an element for this mission reuse it otherwise create it should only be one
+          if (isset($missions[$id]))
+          { 
+            $item = $missions[$id];
+          }
+          else
+          {
+            $item = array
+            (
+              'id' => $row -> id,
+              'name' => $row -> name,
+              'description' => $row -> description,
+              'last_update' => $row -> last_update,
+              'countryid' => $row -> countryid,
+              'countryname' => $row -> countryname,
+              'countrydescription' => $row -> countrydescription,
+            );
+          }
+          // update country element
+          $missions[$id] = $item;
+          $i = $i + 1;
         }
+
+        // preformat the arrays to faciliate conversion to JSON in the required format
+        // as we are selecting by id should only be one.
+        $retMissions = array();
+        foreach ($missions as $missionrow)
+        {
+            $retMissions = $missionrow;
+            
+        }
+    
+        if ($i > 0) {
+           // need to turn off the cache on the results array so set the max-age to 0 by adding $results entity to the cache dependencies.
+          // This will clear our cache when this entity updates.
+          $renderer = \Drupal::service('renderer');
+          $renderer->addCacheableDependency($results, null);
+
+          return  new \Symfony\Component\HttpFoundation\JsonResponse($retMissions);
+        }
+
         throw new NotFoundHttpException(t('Mission with ID @id was not found', array('@id' => $id)));
     }
       throw new NotFoundHttpException(t('Mission ID not provided'));

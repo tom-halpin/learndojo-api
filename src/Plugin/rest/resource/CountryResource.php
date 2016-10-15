@@ -59,7 +59,7 @@ class CountryResource extends ResourceBase {
                             on c.id = t.country_id where c.id = :id", array(':id' => $id))->fetchAll();
         $i = 0;
         // create country array
-        $countries = array();
+        $countries = array("country");
         $i = 0;
         foreach($results as $row)
         {
@@ -114,8 +114,6 @@ class CountryResource extends ResourceBase {
           $renderer = \Drupal::service('renderer');
           $renderer->addCacheableDependency($results, null);
 
-          // note decoding JSON before returning it to avoid embedded "'s being converted to escaped UTF characters
-          // as we are passing a string to JsonResponse and not an array
           return  new \Symfony\Component\HttpFoundation\JsonResponse($retCountries);
         }
                 

@@ -51,37 +51,74 @@ class MissionStrandsResource extends ResourceBase {
                              m.country_id as countryid, c.name as countryname 
                              FROM kastrand s, kamission m, kacountry c where 
                              s.mission_id = m.id and m.country_id = c.id 
-                             and s.mission_id = :missionid", array(':missionid' => $missionid))->fetchAllAssoc('id');
+                             and s.mission_id = :missionid", array(':missionid' => $missionid))->fetchAll();
 
 
         $i = 0;
-        $outp = "{";
-        foreach ($results as $row) {
-
-            if ($i == 0){
-                // first row
-                $outp .= '"countryid":"'. $row -> countryid     . '",';
-                $outp .= '"countryname":"'. $row -> countryname     . '",';                
-                $outp .= '"missionid":"'. $row -> missionid     . '",';
-                $outp .= '"missionname":"'. $row -> missionname     . '",';
-                $outp .= '"missiondescription":"'. $row -> missiondescription. '",';
-                $outp .= '"strands": [{';             
-            }
-            else {
-                $outp .= ',{';
-            }
-            $outp .= '"id":' . '"'  . $row -> id . '",';
-            $outp .= '"name":"'   . $row -> name        . '",';
-            $outp .= '"description":"'. $row -> description     . '",';
-            $outp .= '"last_update":"'. $row -> last_update . '"}';
-
-            $i = $i + 1;
-        }
+        // create missionstrands array
+        $missionstrands = array();
         
-        if ($i > 0)
-            $outp .="]}";
-        else {
-            $outp .="}";
+        foreach($results as $row)
+        {
+           // if defined retrieve reference to existing missionstrand information else create and initialise a new one for this row of data
+          if (isset($missionstrands['missionstrands']))
+          { 
+            $missionstranditem = $missionstrands['missionstrands'];
+          }
+          else
+          {
+            $missionstranditem = array
+            (
+              'countryid' => $row -> countryid,
+              'countryname' => $row -> countryname,
+              'missionid' => $row -> missionid,
+              'missionname' => $row -> missionname,              
+              'missiondescription' => $row -> missiondescription,
+              'strands' => array() // create strand array for mission
+            );
+            $missionstrands['missionstrands'] = $missionstranditem;
+          }
+                    
+          $strandid = $row -> id;
+          
+          // if defined retrieve reference to existing strand information else create and initialise a new one for this row of data
+          $newstranditem = false;
+          $stranditem = null;
+          $strandkey = null;
+          
+          foreach ($missionstranditem['strands']['id'] as $key => $value) 
+          {
+            if($missionstranditem['strands'][$key] === $strandid)
+            {
+              $stranditem = $missionstranditem['strands'][$key];
+              $strandkey = $key;
+              break;
+            }
+          }
+          
+          if(isset($stranditem) == false)
+          {
+            $stranditem = array
+            (
+              'id' => $strandid,
+              'name' => $row -> name,
+              'description' => $row -> description,
+              'last_update' => $row -> last_update
+            );
+            $newstranditem = true;            
+          }
+          
+          // if previously flagged that we created a new strand item add to the strands array for the mission, otherwise update the exising strand item for the country
+          if($newstranditem)
+          {
+            $missionstranditem['strands'][] = $stranditem;
+          }
+          else {
+            $missionstranditem['strands'][$strandkey] = $stranditem;
+          }
+          // update the root array with the updated arrays
+          $missionstrands['missionstrands'] = $missionstranditem;
+          $i = $i + 1;
         }
             
         if ($i > 0) {
@@ -90,9 +127,7 @@ class MissionStrandsResource extends ResourceBase {
           $renderer = \Drupal::service('renderer');
           $renderer->addCacheableDependency($results, null);
 
-          // note decoding JSON before returning it to avoid embedded "'s being converted to escaped UTF characters
-          // as we are passing a string to JsonResponse and not an array
-          return  new \Symfony\Component\HttpFoundation\JsonResponse(json_decode($outp));
+          return  new \Symfony\Component\HttpFoundation\JsonResponse($missionstrands);
         }
     
         throw new NotFoundHttpException(t('No Strands found for missionid: ' . $missionid));

@@ -55,35 +55,72 @@ class StrandUnitsResource extends ResourceBase {
                              u.strand_id = s.id and u.strand_id = :strandid", array(':strandid' => $strandid))->fetchAllAssoc('id');
 
         $i = 0;
-        $outp = "{";
-        foreach ($results as $row) {
+        // create strandunits array
+        $strandunits = array();
 
-            if ($i == 0){
-                // first row
-                $outp .= '"countryid":"'. $row -> countryid     . '",';
-                $outp .= '"countryname":"'. $row -> countryname     . '",';
-                $outp .= '"missionid":"'. $row -> missionid     . '",';
-                $outp .= '"missionname":"'. $row -> missionname     . '",';                
-                $outp .= '"strandid":"'. $row -> strandid     . '",';
-                $outp .= '"strandname":"'. $row -> strandname     . '",';
-                $outp .= '"stranddescription":"'. $row -> stranddescription. '",';
-                $outp .= '"units": [{';             
+        foreach($results as $row)
+        {
+           // if defined retrieve reference to existing strandunit information else create and initialise a new one for this row of data
+          if (isset($strandunits['strandunits']))
+          { 
+            $strandunititem = $strandunits['strandunits'];
+          }
+          else
+          {
+            $strandunititem = array
+            (
+              'countryid' => $row -> countryid,
+              'countryname' => $row -> countryname,
+              'missionid' => $row -> missionid,
+              'missionname' => $row -> missionname,              
+              'strandid' => $row -> strandid,
+              'strandname' => $row -> strandname,
+              'stranddescription' => $row -> stranddescription,
+              'units' => array() // create unit array for strand
+            );
+            $strandunits['strandunits'] = $strandunititem;
+          }
+                    
+          $unitid = $row -> id;
+          
+          // if defined retrieve reference to existing unit information else create and initialise a new one for this row of data
+          $newunititem = false;
+          $unititem = null;
+          $unitkey = null;
+          
+          foreach ($strandunititem['units']['id'] as $key => $value) 
+          {
+            if($strandunititem['units'][$key] === $unitid)
+            {
+              $unititem = $strandunititem['units'][$key];
+              $unitkey = $key;
+              break;
             }
-            else {
-                $outp .= ',{';
-            }
-            $outp .= '"id":' . '"'  . $row -> id . '",';
-            $outp .= '"name":"'   . $row -> name        . '",';
-            $outp .= '"description":"'. $row -> description     . '",';
-            $outp .= '"last_update":"'. $row -> last_update . '"}';
-
-            $i = $i + 1;
-        }
-
-        if ($i > 0)
-            $outp .="]}";
-        else {
-            $outp .="}";
+          }
+          
+          if(isset($unititem) == false)
+          {
+            $unititem = array
+            (
+              'id' => $unitid,
+              'name' => $row -> name,
+              'description' => $row -> description,
+              'last_update' => $row -> last_update
+            );
+            $newunititem = true;            
+          }
+          
+          // if previously flagged that we created a new unit item add to the units array for the strand, otherwise update the exising unit item for the strand
+          if($newunititem)
+          {
+            $strandunititem['units'][] = $unititem;
+          }
+          else {
+            $strandunititem['units'][$unitkey] = $unititem;
+          }
+          // update the root array with the updated arrays
+          $strandunits['strandunits'] = $strandunititem;
+          $i = $i + 1;
         }
     
         if ($i > 0) {
@@ -92,9 +129,7 @@ class StrandUnitsResource extends ResourceBase {
           $renderer = \Drupal::service('renderer');
           $renderer->addCacheableDependency($results, null);
 
-          // note decoding JSON before returning it to avoid embedded "'s being converted to escaped UTF characters
-          // as we are passing a string to JsonResponse and not an array
-          return  new \Symfony\Component\HttpFoundation\JsonResponse(json_decode($outp));
+          return  new \Symfony\Component\HttpFoundation\JsonResponse($strandunits);
         }
     
         throw new NotFoundHttpException(t('No Units found for strandid: ' . $strandid));
